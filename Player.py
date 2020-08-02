@@ -20,15 +20,8 @@ class Player:
             self.all_cards.append(card)
 
     def remove_one(self):
-        return self.all_cards.pop(0)
-
-    def discard_all_cards(self):
-        discarded = []
-
-        for _ in range(len(self.all_cards)):
-            discarded.append(self.remove_one())
-
-        return discarded
+        return self.all_cards.pop()
 
     def __str__(self):
-        return f'Player {self.name} has {len(self.all_cards)} cards.'
+        cards = [str(x) for x in self.all_cards]
+        return f"{self.name} has {cards}"
