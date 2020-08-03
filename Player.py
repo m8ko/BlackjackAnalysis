@@ -11,11 +11,11 @@ class Player:
 
     def add_card(self, card):
 
-        #multiple card objects
+        # multiple card objects
         if type(card) == type([]):
             self.all_cards.extend(card)
 
-        #single card object
+        # single card object
         else:
             self.all_cards.append(card)
 

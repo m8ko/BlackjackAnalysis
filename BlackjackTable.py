@@ -1,5 +1,5 @@
 '''
-Simulates a game of blackjack
+Creates an object where the game can be played manually, simulated, or otherwise experimented with
 '''
 
 from Deck import Deck
@@ -19,6 +19,7 @@ def hand_busted(hand):
 
 
 def get_initial_value(card_rank):
+    # Returns the initial values of cards, because cards class values need to be overwritten
     values = {'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5, 'Six': 6, 'Seven': 7, 'Eight': 8,
               'Nine': 9, 'Ten': 10, 'Jack': 10, 'Queen': 10, 'King': 10, 'Ace': 11}
 
@@ -26,16 +27,15 @@ def get_initial_value(card_rank):
 
 
 def get_hand_score(cards):
-    # Busted hand value is set to False
-    if hand_busted(cards):
+    # Returns the maximum possible score of a hand or False if the hand has busted
+
+    if hand_busted(cards):  # Busted hand value is set to False
         return False
 
-    # If no bust set value to highest possible score
-    else:
+    else:  # If no bust set value to highest possible score
         player_score = sum([get_initial_value(card.rank) for card in cards])
 
-        # Corrects initial scores for hands that contain an ace to their max possible score
-        while player_score > 21:
+        while player_score > 21:  # Corrects initial scores for hands that contain an ace to their max possible score
             player_score -= 10
 
         return player_score
@@ -44,21 +44,16 @@ def get_hand_score(cards):
 class BlackjackTable:
 
     def __init__(self, players, size_of_shoe=8):
-        # A list of player objects
-        self.players = players
+        self.players = players  # A list of player objects
         self.dealer = Player('Dealer')
         self.shoe = Deck(size_of_shoe)
+        self.discard_pile = [self.shoe.deal_one()]  # Always starts by burning one card
+        self.cut_card_position = 104 + randint(-13, 13)  # Places a cut card 2 decks from the end +-1/4 deck
 
-        # Always starts by burning one card
-        self.discard_pile = [self.shoe.deal_one()]
-
-        # Places a cut card 2 decks from the end +-1/4 deck
-        self.cut_card_position = 104 + randint(-13, 13)
-
-    def play_round(self):
+    def play_round_manually(self):
         """
-        returns the evaluation of game after simulating a "round" of blackjack. The returned object is a list equal
-        to the number of players at the table with the possible values being True for a win, False for a loss,
+        Returns the evaluation of game after simulating a manual "round" of blackjack. The returned object is a list
+        equal to the number of players at the table with the possible values being True for a win, False for a loss,
         Blackjack for a 21 with 2 cards, and Push if there is a tie with the dealer.
         """
         needs_reset = len(self.shoe.all_cards) < self.cut_card_position
@@ -75,13 +70,13 @@ class BlackjackTable:
         return results
 
     def deal_cards(self, print_action=True):
-        # deal 2 cards to each player and the dealer
+        # deal two cards to each player and the dealer
         for _ in range(2):
             for player in self.players:
                 player.add_card(self.shoe.deal_one())
             self.dealer.add_card(self.shoe.deal_one())
 
-        if print_action:
+        if print_action:  # To keep from printing deal to console, pass False as parameter
             self.print_deal()
 
     def print_deal(self):
@@ -91,6 +86,8 @@ class BlackjackTable:
         print(f"Dealer is showing a {self.dealer.all_cards[0]}.")
 
     def player_draws_manually(self):
+        # Allows for each player to hit until bust or stand
+
         for player in self.players:
 
             while True:
@@ -113,6 +110,8 @@ class BlackjackTable:
         player.add_card(self.shoe.deal_one())
 
     def dealer_draws(self, print_action=True):
+        # Dealer hits soft 17 and under. Can toggle off printing to console by passing in False as parameter
+
         if print_action:
             print(f'Dealer reveals {self.dealer.all_cards[1]}.')
 
@@ -125,15 +124,14 @@ class BlackjackTable:
 
             if print_action:
                 print("Dealer hits.")
-            # Dealers draws a card
-            self.dealer.add_card(self.shoe.deal_one())
+
+            self.dealer.add_card(self.shoe.deal_one())  # Dealers draws a card
             value_of_dealer_cards.append(get_initial_value(self.dealer.all_cards[-1].rank))
 
             if print_action:
                 print(f"Dealer draws {self.dealer.all_cards[-1]}.")
 
-            # Dealer busts; break out of while loop
-            if hand_busted(self.dealer.all_cards):
+            if hand_busted(self.dealer.all_cards):  # Dealer busts; break out of while loop
                 if print_action:
                     print('Dealer busts.')
                 break
@@ -145,51 +143,43 @@ class BlackjackTable:
                         value_of_dealer_cards[x] = 1
                         break
 
-    # Returns the initial values of cards; Ace defaults to 11
-
     def evaluate_game(self):
         """
         Returns a list equal to the number of players in game. The possible values of that list are True (winner),
         False (loser), 'Blackjack' (for 21 with 2 cards), or 'Push' (tie with dealer)
         """
 
-        # Assumes winners
-        winners = [True for _ in range(len(self.players))]
+        winners = [True for _ in range(len(self.players))]  # Assumes winners
 
         for x in range(len(self.players)):
-
             # Calls function which returns false for busted hand or integer of score
             winners[x] = get_hand_score(self.players[x].all_cards)
 
         dealer_value = get_hand_score(self.dealer.all_cards)
 
         for num in range(len(winners)):
-            # Player Busted; Player Loses
-            if winners[num] == False:
+            if winners[num] == False:  # Player Busted; Player Loses
                 continue
 
-            # Player didn't bust, but dealer did; Player wins
-            elif dealer_value == False:
+            elif dealer_value == False:  # Player didn't bust, but dealer did; Player wins
                 winners[num] = True
 
-            # Check for player Blackjack; Player wins
-            elif winners[num] == 21 and len(self.players[num].all_cards) == 2:
+            elif winners[num] == 21 and len(self.players[num].all_cards) == 2:  # Check for player Blackjack
                 winners[num] = 'Blackjack'
 
-            # Check for winner or push
-            else:
-                # Checks who has higher score if neither bust
-                if winners[num] != dealer_value:
+            else:  # Check for winner or push
+
+                if winners[num] != dealer_value:  # Checks who has higher score if neither bust
                     winners[num] = winners[num] > dealer_value
 
-                # Push
-                else:
+                else:  # Push
                     winners[num] = 'Push'
 
         return winners
 
-    # Put discarded cards back in shoe, shuffle, reset cut card, burn a card
     def reset_shoe(self):
+        # Put discarded cards back in shoe, shuffles, resets cut card, burns a card
+
         for x in range(len(self.discard_pile)):
             self.shoe.all_cards.append(self.discard_pile.pop())
 
