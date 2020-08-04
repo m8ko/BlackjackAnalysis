@@ -27,6 +27,8 @@ def get_initial_value(card_rank):
 
 
 def get_hand_score(cards):
+    """Takes in a list of card objects and returns the maximum possible score of a hand or False if the hand has
+     busted"""
     # Returns the maximum possible score of a hand or False if the hand has busted
 
     if hand_busted(cards):  # Busted hand value is set to False

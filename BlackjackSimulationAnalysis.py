@@ -1,6 +1,7 @@
 from Player import Player
 from BlackjackTable import BlackjackTable, get_hand_score
 from time import perf_counter
+import functools
 
 results_matrix = [
     [{"Hit": {'Win': 0, 'Loss': 0, 'Draw': 0}, "Stand": {'Win': 0, 'Loss': 0, 'Draw': 0}} for i in range(11)] for y in
@@ -11,10 +12,13 @@ sim_table.shoe.shuffle()
 
 
 def time_efficiency(func):
-    def wrap_func(param):
+    # Decorator that allows one to test how long it takes for a function to execute and prints to console
+
+    @functools.wraps(func)
+    def wrap_func(*args, **kwargs):
         start = perf_counter()
-        func(param)
-        print(f"{perf_counter() - start},")
+        func(*args, **kwargs)
+        print(f"Time to execute: {perf_counter() - start}")
 
     return wrap_func
 
@@ -27,9 +31,9 @@ def get_stand_probability(num_of_rounds):
         if needs_reset:  # Checks if the shoe has has come across cut card and resets if so
             sim_table.reset_shoe()
 
-        sim_table.deal_cards(False)
+        sim_table.deal_cards(False)  # Deals cards to players and dealer, doesn't print deal
         simulate_stand(sim_table)
-        sim_table.clear_table_cards()
+        sim_table.clear_table_cards()  # Move cards to discard pile
 
 
 def simulate_stand(table):
@@ -80,34 +84,49 @@ def store_results(dlr_score, player_tuples):
             results_matrix[player_score - 1][dlr_score - 1][action]['Draw'] += 1
 
 
-def print_results_matrix():
+def write_list_to_csv(file_object, lst):
+    list_as_string = str(lst)[1:-1].replace(" ''", '')
+    file_object.write(list_as_string)
+    file_object.write('\n')
+
+def print_results_to_csv():
     """
     Prints the results matrix in a manner that can be easily imported to a csv file. The number that is printed out
     for the matrix is a number between -1 and 1 which is essentially a payout multiple.
     """
-    print(' ,1,2,3,4,5,6,7,8,9,10,11')
 
-    for x in range(3, len(results_matrix)):
-        row_results = [x + 1]
+    results = open('exp_payout_to_stand.csv', 'w+')
+    results.write(',2,3,4,5,6,7,8,9,10,11\n')
 
-        for y in range(len(results_matrix[x])):
-            stand = results_matrix[x][y]['Stand']
-            win = stand['Win']
-            loss = stand['Loss']
-            draw = stand['Draw']
-            observations = (win + loss + draw)
-            if observations == 0:
+    observations_file = open('observations.csv', 'w+')
+    observations_file.write(',2,3,4,5,6,7,8,9,10,11\n')
+
+    for row_index in range(3, len(results_matrix)):
+        row_results = [row_index + 1]  # Holds the result for a row. First element is the row index + 1 (player's score)
+        observations = [row_index + 1]
+
+        # Retrieves values from matrix and calculates payout to stand based on player score and dealer show card
+        for column_index in range(1, len(results_matrix[row_index])):
+            stand = results_matrix[row_index][column_index]['Stand']
+
+            win, loss, draw = stand['Win'], stand['Loss'], stand['Draw']
+
+            obs = sum([win, loss, draw])
+            observations.append(obs)
+
+            if obs == 0:  # Avoids a divide by zero error
                 row_results.append('')
-            else:
-                win_percentage = win / observations
-                loss_percentage = loss / observations
-                payout_to_stand = win_percentage * 1 + loss_percentage * -1
-                row_results.append(payout_to_stand)
+            else:  #
+                win_percentage = win / obs
+                loss_percentage = loss / obs
+                exp_payout_to_stand = win_percentage * 1 + loss_percentage * -1
+                row_results.append(exp_payout_to_stand)
 
-        for i in range(len(row_results)):
-            print(row_results[i], end=",")
+        write_list_to_csv(results, row_results)
+        write_list_to_csv(observations_file, observations)
 
-        print()
+    results.close()
+    observations_file.close()
 
-
-get_stand_probability(1000000)
+get_stand_probability(10000000)
+print_results_to_csv()
